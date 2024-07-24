@@ -1,0 +1,98 @@
+
+### Conditional analyses for identified proteins located at GWAS risk loci
+### The EUR and ASN GWAS summary data were adjusted for index variants at risk loci separately, then the conditional summary results were combined by meta-analysis;
+
+for i in {1..22}
+do
+grep -f index_pos38 /nobackup/sbcs/damon/BioVU_EUR_HRC_Oct2022/BioVU_HRC_bd38_chr$i.bim |awk 'BEGIN{OFS="\t";}  {print $2}' >> index_pos38_snpname
+
+
+/nobackup/sbcs/damon/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1 --bfile /nobackup/sbcs/damon/BioVU_EUR_HRC_Oct2022/BioVU_HRC_bd38_chr$i --chr $i --maf 0.001  --cojo-file Eur_BC_COJO_chr$i   --cojo-cond index_pos38_snpname --out EUR_BC_COJO_cond_chr$i
+#python /nobackup/sbcs/damon/PWAS/GWAS_summary_rsid_COJO.py  EUR_BC_COJO_cond_chr$i.cma.cojo > EUR_BC_cond_chr$i
+
+/nobackup/sbcs/damon/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1 --bfile /nobackup/sbcs/damon/BioVU_EUR_HRC_Oct2022/BioVU_HRC_bd38_chr$i  --chr $i --maf 0.001  --cojo-file Eur_ERpos_COJO_chr$i   --cojo-cond index_pos38_snpname  --out EUR_ERpos_COJO_cond_chr$i
+#python /nobackup/sbcs/damon/PWAS/GWAS_summary_rsid_COJO.py  EUR_ERpos_COJO_cond_chr$i.cma.cojo > EUR_ERpos_cond_chr$i
+
+/nobackup/sbcs/damon/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1 --bfile /nobackup/sbcs/damon/BioVU_EUR_HRC_Oct2022/BioVU_HRC_bd38_chr$i  --chr $i --maf 0.001  --cojo-file Eur_ERneg_COJO_chr$i   --cojo-cond index_pos38_snpname --out EUR_ERneg_COJO_cond_chr$i
+#python /nobackup/sbcs/damon/PWAS/GWAS_summary_rsid_COJO.py  EUR_ERneg_COJO_cond_chr$i.cma.cojo > EUR_ERneg_cond_chr$i
+
+
+/nobackup/sbcs/damon/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1 --bfile /nobackup/sbcs/damon/EUR_ASN/Asian_MEGA_BC_control/MEGA_ASN_noncase_bd38_chr$i --chr $i --maf 0.001  --cojo-file Asn_BC_COJO_chr$i   --cojo-cond index_pos38_snpname --out ASN_BC_COJO_cond_chr$i
+#python /nobackup/sbcs/damon/PWAS/GWAS_summary_rsid_COJO.py  ASN_BC_COJO_cond_chr$i.cma.cojo > ASN_BC_cond_chr$i
+
+/nobackup/sbcs/damon/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1 --bfile /nobackup/sbcs/damon/EUR_ASN/Asian_MEGA_BC_control/MEGA_ASN_noncase_bd38_chr$i  --chr $i --maf 0.001  --cojo-file Asn_ERpos_COJO_chr$i   --cojo-cond index_pos38_snpname  --out ASN_ERpos_COJO_cond_chr$i
+#python /nobackup/sbcs/damon/PWAS/GWAS_summary_rsid_COJO.py  ASN_ERpos_COJO_cond_chr$i.cma.cojo > ASN_ERpos_cond_chr$i
+
+/nobackup/sbcs/damon/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1 --bfile /nobackup/sbcs/damon/EUR_ASN/Asian_MEGA_BC_control/MEGA_ASN_noncase_bd38_chr$i  --chr $i --maf 0.001  --cojo-file Asn_ERneg_COJO_chr$i   --cojo-cond index_pos38_snpname --out ASN_ERneg_COJO_cond_chr$i
+#python /nobackup/sbcs/damon/PWAS/GWAS_summary_rsid_COJO.py  ASN_ERneg_COJO_cond_chr$i.cma.cojo > ASN_ERneg_cond_chr$i
+
+python cma_to_metal.py EUR_BC_COJO_cond_chr$i.cma.cojo > metal_EUR_BC_cond_chr$i
+python cma_to_metal.py EUR_ERpos_COJO_cond_chr$i.cma.cojo > metal_EUR_ERpos_cond_chr$i
+python cma_to_metal.py EUR_ERneg_COJO_cond_chr$i.cma.cojo > metal_EUR_ERneg_cond_chr$i
+python cma_to_metal.py ASN_BC_COJO_cond_chr$i.cma.cojo > metal_ASN_BC_cond_chr$i
+python cma_to_metal.py ASN_ERpos_COJO_cond_chr$i.cma.cojo > metal_ASN_ERpos_cond_chr$i
+python cma_to_metal.py ASN_ERneg_COJO_cond_chr$i.cma.cojo >  metal_ASN_ERneg_cond_chr$i
+done
+
+
+####cma_to_metal.py
+import sys
+for line in open(sys.argv[1]):
+    if line.startswith("Chr"): print("\t".join(['SNP', 'BETA', 'P', 'SE', 'TEST', 'OTHER', 'TEST_FREQ','N']));continue
+    Chr,SNP,bp,refA,freq,b,se,p,n,freq_geno,bC,bC_se,pC= line.strip().split("\t")
+    if bC_se =="NA": continue
+    eff_A = refA
+    k=SNP.split(":")
+    ot_A = k[3] if eff_A == k[2] else k[2]
+    c=k[0]
+    p=k[1]
+    print("\t".join([SNP,bC,pC,bC_se,eff_A,ot_A,refA,n]))
+
+########
+
+module load  GCCcore/.8.2.0 Metal/2011-03-25
+for i in {1..22}
+do
+
+metal << EOT
+MARKER SNP
+ALLELE TEST OTHER
+EFFECT BETA
+STDERR SE
+PVALUE P
+SCHEME STDERR
+
+FREQLABEL TEST_FREQ
+AVERAGEFREQ ON
+MINMAXFREQ ON
+
+CUSTOMVARIABLE TotalSampleSize
+LABEL TotalSampleSize as N
+
+PROCESS metal_EUR_BC_cond_chr$i
+PROCESS metal_ASN_BC_cond_chr$i
+OUTFILE EUR_ASN_BC_cond_chr$i.v1_ .txt
+
+#PROCESS metal_EUR_ERpos_cond_chr$i
+#PROCESS metal_ASN_ERpos_cond_chr$i
+#OUTFILE EUR_ASN_POS_cond_chr$i.v1_ .txt
+
+#PROCESS metal_EUR_ERneg_cond_chr$i
+#PROCESS metal_AS_ERneg_cond_chr$i
+#OUTFILE EUR_ASN_NEG_cond_chr$i.v1_ .txt
+
+
+ANALYZE HETEROGENEITY
+QUIT
+EOT
+done
+
+## Run the FUSION using conditional summary results
+for i in {1..22}
+do
+Rscript PWAS.assoc_test.R --sumstats EUR_ASN_BC_cond --weights ./PWAS_EA/Plasma_Protein_EA_hg38.pos --weights_dir ./PWAS_EA/Plasma_Protein_weights_EA --ref_ld_chr ./LDref/EUR/chr --force_model enet --chr ${i} --out BC_cond_EUR_ASN.chr${i}.pwas
+Rscript PWAS.assoc_test.R --sumstats EUR_ASN_POS_cond --weights ./PWAS_EA/Plasma_Protein_EA_hg38.pos --weights_dir ./PWAS_EA/Plasma_Protein_weights_EA --ref_ld_chr ./LDref/EUR/chr --force_model enet --chr ${i} --out ERpos_cond_EUR_ASN.chr${i}.pwas
+Rscript PWAS.assoc_test.R --sumstats EUR_ASN_NEG_cond --weights ./PWAS_EA/Plasma_Protein_EA_hg38.pos --weights_dir ./PWAS_EA/Plasma_Protein_weights_EA --ref_ld_chr ./LDref/EUR/chr --force_model enet --chr ${i} --out ERneg_cond_EUR_ASN.chr${i}.pwas
+
+done
+
