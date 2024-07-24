@@ -1,0 +1,49 @@
+#(1) Prepare GWAS summary as input for FUSION
+#The variants need to be recoded using RSID in the input file for FUSION
+
+## GWAS_summary_rsid_EUR_AFR.py
+import sys
+
+ss = {}
+
+for line in open(sys.argv[1]):
+    if line.startswith("MarkerName"): continue
+    SNP,TEST,OTHER,TEST_Freq,FreqSE,MinFreq,MaxFreq,beta,se,P,Direction,HetISq,HetChiSq, HetDf,HetPVal,TotalSampleSize = line.strip().split("\t")
+    if float(se) <=0 : continue
+    zscore = str(float(beta)/float(se))
+    eff_A = TEST.upper()
+    ot_A = OTHER.upper()
+    k=SNP.split(":")
+    c=k[0]
+    p=k[1]
+    tag = ":".join([c,p,eff_A,ot_A]); ss[tag] = [eff_A, ot_A, zscore]
+    tag1 = ":".join([c,p,ot_A,eff_A]); ss[tag1] = [eff_A, ot_A, zscore]
+
+print "SNP A1 A2 Z"
+for line in open("rsid_bim_snp_uniq"):
+    l = line.strip().split("\t")
+    tag1 = ":".join([l[1],l[2],l[3],l[4]])
+    tag2 = ":".join([l[1],l[2],l[4],l[3]])
+    if tag1 in ss:
+        print("\t".join([l[0]] + ss[tag1]))
+    elif tag2 in ss:
+        print("\t".join([l[0]] + ss[tag2]))
+#########
+
+for i in {1..22}
+do
+python GWAS_summary_rsid_unformat.py /nobackup/sbcs/damon/BC_GWAS_Summary/Uniq_METAL_input_rep_EUR_bd38_liftover_1pct_chr$i >> BC_EUR
+python GWAS_summary_rsid_unformat.py /nobackup/sbcs/damon/BC_GWAS_Summary/Uniq_METAL_input_rep_EUR_ERpos_bd38_liftover_1pct_chr$i >> ERpos_EUR
+python GWAS_summary_rsid_unformat.py /nobackup/sbcs/damon/ASN_BC_GWAS/METAL_input_rep_EUR_with_CIMBA_ERneg_bd38_1pct_chr$i >> ERneg_EUR
+
+python GWAS_summary_rsid_AFR.py /nobackup/sbcs/damon/BC_GWAS_Summary/METAL_input_rep_AFR_bd38_1pct_chr$i >> BC_AFR
+python GWAS_summary_rsid_AFR.py /nobackup/sbcs/damon/BC_GWAS_Summary/METAL_input_rep_AFR_ERpos_bd38_1pct_chr$i >> ERpos_AFR
+python GWAS_summary_rsid_AFR.py /nobackup/sbcs/damon/BC_GWAS_Summary/METAL_input_rep_AFR_ERneg_bd38_1pct_chr$i >> ERneg_AFR
+
+python GWAS_summary_rsid_EUR_AFR.py /nobackup/sbcs/damon/BC_GWAS_Summary/EUR_AFR_ASN_with_BCAC_chr$i.v1_1.txt |sort|uniq >> BC_EUR_ASN_AFR
+python GWAS_summary_rsid_EUR_AFR.py /nobackup/sbcs/damon/AABCGS/GWAS_Topmed/Summary/EUR_ASN12_AFR_ERpos_pct_fixed_chr$i.v1_1.txt |sort|uniq >> ERpos_EUR_ASN_AFR
+python GWAS_summary_rsid_EUR_AFR.py /nobackup/sbcs/damon/BC_GWAS_Summary/EUR_AFR_ASN_with_CIMBA_ERneg_chr$i.v1_1.txt|sort|uniq >> ERneg_EUR_ASN_AFR
+
+done
+## These results need to add a header "SNP A1 A2 Z" before using in the FUSION.
+
