@@ -1,0 +1,136 @@
+
+##### Run the FUSION
+
+for i in {1..22}
+do
+## AFR model with AFR GWAS
+Rscript PWAS.assoc_test.R --sumstats BC_AFR_header --weights ./PWAS_AA/Plasma_Protein_AA_hg38.pos.modified --weights_dir ./PWAS_AA/Plasma_Protein_weights_AA --ref_ld_chr ./LDref/AFR/chr --force_model enet --chr ${i} --out BC_AFR.chr${i}.pwas
+Rscript PWAS.assoc_test.R --sumstats ERpos_AFR_header --weights ./PWAS_AA/Plasma_Protein_AA_hg38.pos.modified --weights_dir ./PWAS_AA/Plasma_Protein_weights_AA --ref_ld_chr ./LDref/AFR/chr --force_model enet --chr ${i} --out ERpos_AFR.chr${i}.pwas
+Rscript PWAS.assoc_test.R --sumstats ERneg_AFR_header --weights ./PWAS_AA/Plasma_Protein_AA_hg38.pos.modified --weights_dir ./PWAS_AA/Plasma_Protein_weights_AA --ref_ld_chr ./LDref/AFR/chr --force_model enet --chr ${i} --out ERneg_AFR.chr${i}.pwas
+
+## EUR model with EUR&ASN GWAS
+Rscript PWAS.assoc_test.R --sumstats BC_EUR_ASN_header --weights ./PWAS_EA/Plasma_Protein_EA_hg38.pos --weights_dir ./PWAS_EA/Plasma_Protein_weights_EA --ref_ld_chr ./LDref/EUR/chr --force_model enet --chr ${i} --out BC_EUR_ASN.chr${i}.pwas
+Rscript PWAS.assoc_test.R --sumstats ERpos_EUR_ASN_header --weights ./PWAS_EA/Plasma_Protein_EA_hg38.pos --weights_dir ./PWAS_EA/Plasma_Protein_weights_EA --ref_ld_chr ./LDref/EUR/chr --force_model enet --chr ${i} --out ERpos_EUR_ASN.chr${i}.pwas
+Rscript PWAS.assoc_test.R --sumstats ERneg_EUR_ASN_header --weights ./PWAS_EA/Plasma_Protein_EA_hg38.pos --weights_dir ./PWAS_EA/Plasma_Protein_weights_EA --ref_ld_chr ./LDref/EUR/chr --force_model enet --chr ${i} --out ERneg_EUR_ASN.chr${i}.pwas
+
+## AFR model with EUR&ASN$AFR GWAS
+Rscript PWAS.assoc_test.R --sumstats BC_EUR_ASN_AFR_header --weights ./PWAS_EA/Plasma_Protein_EA_hg38.pos --weights_dir ./PWAS_EA/Plasma_Protein_weights_EA --ref_ld_chr ./LDref/EUR/chr --force_model enet --chr ${i} --out eurModel_BC_EUR_ASN_AFR.chr${i}.pwas
+Rscript PWAS.assoc_test.R --sumstats ERpos_EUR_ASN_AFR_header --weights ./PWAS_EA/Plasma_Protein_EA_hg38.pos --weights_dir ./PWAS_EA/Plasma_Protein_weights_EA --ref_ld_chr ./LDref/EUR/chr --force_model enet --chr ${i} --out eurModel_ERpos_EUR_ASN_AFR.chr${i}.pwas
+Rscript PWAS.assoc_test.R --sumstats ERneg_EUR_ASN_AFR_header --weights ./PWAS_EA/Plasma_Protein_EA_hg38.pos --weights_dir ./PWAS_EA/Plasma_Protein_weights_EA --ref_ld_chr ./LDref/EUR/chr --force_model enet --chr ${i} --out eurModel_ERneg_EUR_ASN_AFR.chr${i}.pwas
+
+## EUR model with EUR&ASN$AFR GWAS
+Rscript PWAS.assoc_test.R --sumstats BC_EUR_ASN_AFR_header --weights ./PWAS_AA/Plasma_Protein_AA_hg38.pos.modified --weights_dir ./PWAS_AA/Plasma_Protein_weights_AA --ref_ld_chr ./LDref/AFR/chr --force_model enet --chr ${i} --out afrModel_BC_AFR.chr${i}.pwas
+Rscript PWAS.assoc_test.R --sumstats ERpos_EUR_ASN_AFR_header --weights ./PWAS_AA/Plasma_Protein_AA_hg38.pos.modified --weights_dir ./PWAS_AA/Plasma_Protein_weights_AA --ref_ld_chr ./LDref/AFR/chr --force_model enet --chr ${i} --out afrModel_ERpos_AFR.chr${i}.pwas
+Rscript PWAS.assoc_test.R --sumstats ERneg_EUR_ASN_AFR_header --weights ./PWAS_AA/Plasma_Protein_AA_hg38.pos.modified --weights_dir ./PWAS_AA/Plasma_Protein_weights_AA --ref_ld_chr ./LDref/AFR/chr --force_model enet --chr ${i} --out afrModel_ERneg_AFR.chr${i}.pwas
+
+done
+
+
+
+### Combing results from both models
+for i in {1..22}
+do
+sed 1d BC_AFR.chr${i}.pwas >> BC_AFR_all
+sed 1d ERpos_AFR.chr${i}.pwas >> ERpos_AFR_all
+sed 1d ERneg_AFR.chr${i}.pwas >> ERneg_AFR_all
+
+sed 1d BC_EUR_ASN.chr${i}.pwas >> BC_EUR_ASN_all
+sed 1d ERpos_EUR_ASN.chr${i}.pwas >> ERpos_EUR_ASN_all
+sed 1d ERneg_EUR_ASN.chr${i}.pwas >> ERneg_EUR_ASN_all
+
+sed 1d eurModel_BC_EUR_ASN_AFR.chr${i}.pwas  >> eurModel_BC_EUR_ASN_AFR_all
+sed 1d eurModel_ERpos_EUR_ASN_AFR.chr${i}.pwas >> eurModel_ERpos_EUR_ASN_AFR_all
+sed 1d eurModel_ERneg_EUR_ASN_AFR.chr${i}.pwas >> eurModel_ERneg_EUR_ASN_AFR_all
+
+sed 1d afrModel_BC_AFR.chr${i}.pwas >> afrModel_BC_AFR_all
+sed 1d afrModel_ERpos_AFR.chr${i}.pwas >> afrModel_ERpos_AFR_all
+sed 1d afrModel_ERneg_AFR.chr${i}.pwas >> afrModel_ERneg_AFR_all
+
+done
+
+
+module load GCC/11.3.0  OpenMPI/4.1.4 R/4.2.1
+
+AFR<- read.table("afrModel_BC_AFR_all",sep = "\t",header=T)
+loci <- read.table("GWAS_BC_loci",sep = "\t",header=T)
+AFR$BC_loci<- rep(0,nrow(AFR))
+for (i in 1:nrow(AFR)){
+
+	loci_working_chr <- loci[loci$Chr == AFR$CHR[i],]
+
+	for (j in 1:nrow(loci_working_chr)) {
+		if ( max(AFR$P1[i], loci_working_chr$End[j] ) -min(AFR$P0[i], loci_working_chr$Start[j]) <= loci_working_chr$End[j] - loci_working_chr$Start[j] + AFR$P1[i] - AFR$P0[i] ) {
+		AFR$BC_loci[i] <-1
+		break
+		}
+	}
+}
+
+AFR$PWAS.P <- as.numeric(AFR$PWAS.P)
+AFR$PWAS.Z <- as.numeric(AFR$PWAS.Z)
+AFR<- AFR[!is.na(AFR$PWAS.P) & AFR$MODELCV.R2 >=0.01,]
+
+AFR2 <- AFR[order(AFR$ID,AFR$PWAS.P),]
+AFR3<-AFR2[!duplicated(AFR2$ID),]
+
+
+EUR<- read.table("eurModel_BC_EUR_ASN_AFR_all",sep = "\t",header=T)
+loci <- read.table("GWAS_BC_loci",sep = "\t",header=T)
+EUR$BC_loci<- rep(0,nrow(EUR))
+for (i in 1:nrow(EUR)){
+
+	loci_working_chr <- loci[loci$Chr == EUR$CHR[i],]
+
+	for (j in 1:nrow(loci_working_chr)) {
+		if ( max(EUR$P1[i], loci_working_chr$End[j] ) -min(EUR$P0[i], loci_working_chr$Start[j]) <= loci_working_chr$End[j] - loci_working_chr$Start[j] + EUR$P1[i] - EUR$P0[i] ) {
+		EUR$BC_loci[i] <-1
+		break
+		}
+	}
+}
+
+EUR$PWAS.P <- as.numeric(EUR$PWAS.P)
+EUR$PWAS.Z <- as.numeric(EUR$PWAS.Z)
+
+EUR<- EUR[!is.na(EUR$PWAS.P) & EUR$MODELCV.R2 >=0.01,]
+EUR2 <- EUR[order(EUR$ID,EUR$PWAS.P),]
+EUR3<-EUR2[!duplicated(EUR2$ID),]
+EUR3$p.fdr <- p.adjust(EUR3$PWAS.P, method = "fdr",n = length(EUR3$PWAS.P))
+
+EUR_ASN_sig <- EUR3[EUR3$p.fdr <0.05,]
+#write.table(EUR_ASN_sig , file ="EUR_ASN_sig_all",sep="\t", row.names=F,col.names=T, quote=F)
+
+AFR.brief <- AFR3[,c("ID","CHR","P0","P1","PWAS.Z","PWAS.P")]
+EUR.brief <- EUR3[,c("ID","CHR","P0","P1","PWAS.Z","PWAS.P")]
+
+library(dplyr)
+merge<- full_join(AFR.brief,EUR.brief,by=c("ID"="ID"),suffix=c(".afr",".eur"))
+afr.only <- merge[is.na(merge$PWAS.Z.eur),]
+eur.only <- merge[is.na(merge$PWAS.Z.afr),]
+both <- merge[!is.na(merge$PWAS.Z.eur) & !is.na(merge$PWAS.Z.afr),]
+
+#library(devtools)
+#devtools::install_github("yaowuliu/ACAT")
+
+merge$P.acat <- rep(NA, nrow(merge))
+library(ACAT)
+for (i in 1: nrow(merge)) {
+	if(is.na(merge$PWAS.Z.eur[i])) {
+		merge$P.acat[i] <-merge$PWAS.P.afr[i]
+		next
+	}
+
+	if(is.na(merge$PWAS.Z.afr[i])) {
+		merge$P.acat[i] <-merge$PWAS.P.eur[i]
+		next
+	}
+	merge$P.acat[i]<-ACAT(Pvals=c(merge$PWAS.P.afr[i],merge$PWAS.P.eur[i]),weights=c(39725,373907)) # ALL BC effect sample size
+	#merge$P.acat[i]<-ACAT(Pvals=c(merge$PWAS.P.afr[i],merge$PWAS.P.eur[i]),weights=c(26191,229484)) # ERpos effect sample size
+	#merge$P.acat[i]<-ACAT(Pvals=c(merge$PWAS.P.afr[i],merge$PWAS.P.eur[i]),weights=c(16108,121012)) # ERneg effect sample size
+	
+}
+
+merge$P.acat.fdr <- p.adjust(merge$P.acat, method = "fdr",n = length(merge$P.acat))
+merge[merge$P.acat.fdr<0.05,]
+
+write.table(merge[merge$P.acat.fdr<0.05,] , file ="Results.ACAT.fdr",sep="\t", row.names=F,col.names=T, quote=F)
